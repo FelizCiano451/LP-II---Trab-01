@@ -1,55 +1,67 @@
 package service;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 import model.EntradaPDF;
 
 import java.io.*;
-import java.lang.reflect.Type;
 import java.nio.file.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class PersistenceManager {
-    private static final String CONFIG_FILE = "config.json";
-    private static final String BIBLIOTECA_FILE = "biblioteca.json";
-    private final Gson gson;
-
-    public PersistenceManager() {
-        this.gson = new GsonBuilder().setPrettyPrinting().create();
-    }
+    private static final String CONFIG_FILE = "config.txt";
+    private static final String BIBLIOTECA_FILE = "biblioteca.txt";
 
     public void salvarPathAtual(String path) {
-        try (Writer writer = new FileWriter(CONFIG_FILE)) {
-            gson.toJson(path, writer);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(CONFIG_FILE))) {
+            writer.write(path);
         } catch (IOException e) {
             System.err.println("Erro ao salvar config: " + e.getMessage());
         }
     }
 
     public String carregarPathAtual() {
-        try (Reader reader = new FileReader(CONFIG_FILE)) {
-            return gson.fromJson(reader, String.class);
+        try (BufferedReader reader = new BufferedReader(new FileReader(CONFIG_FILE))) {
+            return reader.readLine();
         } catch (IOException e) {
-            return null; // Se não existir, retorna null
+            return null;
         }
     }
 
     public void salvarBiblioteca(String pathBiblioteca, List<EntradaPDF> entradas) {
-        try (Writer writer = new FileWriter(Paths.get(pathBiblioteca, BIBLIOTECA_FILE).toString())) {
-            gson.toJson(entradas, writer);
+        File file = new File(pathBiblioteca, BIBLIOTECA_FILE);
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            for (EntradaPDF e : entradas) {
+                // Exemplo simples: título;autor1,autor2;pathPDF
+                writer.write(e.getTitulo() + ";" + String.join(",", e.getAutores()) + ";" + e.getPathPDF());
+                writer.newLine();
+            }
         } catch (IOException e) {
             System.err.println("Erro ao salvar biblioteca: " + e.getMessage());
         }
     }
 
     public List<EntradaPDF> carregarBiblioteca(String pathBiblioteca) {
-        try (Reader reader = new FileReader(Paths.get(pathBiblioteca, BIBLIOTECA_FILE).toString())) {
-            Type listType = new TypeToken<List<EntradaPDF>>() {}.getType();
-            return gson.fromJson(reader, listType);
+        List<EntradaPDF> entradas = new ArrayList<>();
+        File file = new File(pathBiblioteca, BIBLIOTECA_FILE);
+        if (!file.exists()) return entradas;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String linha;
+            while ((linha = reader.readLine()) != null) {
+                String[] partes = linha.split(";");
+                if (partes.length >= 3) {
+                    String titulo = partes[0];
+                    List<String> autores = List.of(partes[1].split(","));
+                    String pathPDF = partes[2];
+                    EntradaPDF entrada = new EntradaPDF(titulo, autores, pathPDF); // construtor simplificado
+                    entradas.add(entrada);
+                }
+            }
         } catch (IOException e) {
-            return new java.util.ArrayList<>();
+            System.err.println("Erro ao carregar biblioteca: " + e.getMessage());
         }
+
+        return entradas;
     }
 
     public boolean bibliotecaExiste(String path) {
