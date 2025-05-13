@@ -1,29 +1,40 @@
 package model;
 
 import java.util.List;
+import java.util.Arrays;
 
 public abstract class EntradaPDF {
     protected String titulo;
     protected List<String> autores;
-    protected String pathOriginal;
+    protected String pathPDF;
 
-    public EntradaPDF(String titulo, List<String> autores, String pathOriginal) {
+    public EntradaPDF(String titulo, List<String> autores, String pathPDF) {
         this.titulo = titulo;
         this.autores = autores;
-        this.pathOriginal = pathOriginal;
+        this.pathPDF = pathPDF;
     }
 
-    public abstract void salvarNaBiblioteca(String pathBiblioteca);
+    public String getTitulo() { return titulo; }
+    public List<String> getAutores() { return autores; }
+    public String getPathPDF() { return pathPDF; }
+    public void setPathPDF(String novoPath) { this.pathPDF = novoPath; }
 
-    public String getTitulo() {
-        return titulo;
-    }
+    public abstract String getTipo();
+    public abstract String toLinha(); // linha para arquivo .txt
 
-    public List<String> getAutores() {
-        return autores;
-    }
+    public static EntradaPDF fromLinha(String linha) {
+        String[] partes = linha.split(";");
+        String tipo = partes[0];
 
-    public String getPathOriginal() {
-        return pathOriginal;
+        switch (tipo) {
+            case "LIVRO":
+                return Livro.fromLinha(linha);
+            case "NOTA":
+                return NotaDeAula.fromLinha(linha);
+            case "SLIDE":
+                return Slide.fromLinha(linha);
+            default:
+                return null;
+        }
     }
 }
