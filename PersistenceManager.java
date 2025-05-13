@@ -31,8 +31,7 @@ public class PersistenceManager {
         File file = new File(pathBiblioteca, BIBLIOTECA_FILE);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             for (EntradaPDF e : entradas) {
-                // Exemplo simples: título;autor1,autor2;pathPDF
-                writer.write(e.getTitulo() + ";" + String.join(",", e.getAutores()) + ";" + e.getPathPDF());
+                writer.write(e.toLinha());
                 writer.newLine();
             }
         } catch (IOException e) {
@@ -48,12 +47,8 @@ public class PersistenceManager {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String linha;
             while ((linha = reader.readLine()) != null) {
-                String[] partes = linha.split(";");
-                if (partes.length >= 3) {
-                    String titulo = partes[0];
-                    List<String> autores = List.of(partes[1].split(","));
-                    String pathPDF = partes[2];
-                    EntradaPDF entrada = new EntradaPDF(titulo, autores, pathPDF); // construtor simplificado
+                EntradaPDF entrada = EntradaPDF.fromLinha(linha);
+                if (entrada != null) {
                     entradas.add(entrada);
                 }
             }
